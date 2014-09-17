@@ -50,7 +50,7 @@ import javax.swing.filechooser.FileFilter;
  */
 public class BHFileChooser extends JComponent implements AncestorListener, DropTargetListener, ComponentListener
 {
-	//<editor-fold defaultstate="collapsed" desc="declarations: psf">
+	//<editor-fold defaultstate="collapsed" desc="declarations: public static final">
 	public static final Color DEFAULT_COLOR_WAITING      = SystemColor.textText;
 	public static final Color DEFAULT_COLOR_EVALUATING   = SystemColor.textInactiveText;
 	public static final Color DEFAULT_COLOR_ACCEPTABLE   = SystemColor.textHighlight;
@@ -111,6 +111,7 @@ public class BHFileChooser extends JComponent implements AncestorListener, DropT
 			setDropTarget(new DropTarget(this, acceptableAction, this, true));
 		}
 		addAncestorListener(this);
+        addComponentListener(this);
 	}
 	//</editor-fold>
 	
@@ -126,15 +127,10 @@ public class BHFileChooser extends JComponent implements AncestorListener, DropT
 	
 	private void validateBorder()
 	{
-		Font font = getFont();
 		setBorder(
 			new DashedBorder(
 				// size is the 50% font size if available, else 5% the window size, with a minimum of 1:
-				(float)Math.max(
-					1,
-					font == null
-						? Math.max(getHeight(), getWidth()) * 0.05
-						: font.getSize2D() * 0.5),
+				getBaseUnitOfMeasurement(),
 				getStateColor()
 			)
 		);
@@ -142,9 +138,9 @@ public class BHFileChooser extends JComponent implements AncestorListener, DropT
 	
 	private void validateCTA()
 	{
-		Font font = getFont();
+		Font font = dragDropCTA.getFont();
 		if (font != null)
-			dragDropCTA.setFont(font.deriveFont(font.getSize2D() * 2));
+			dragDropCTA.setFont(font.deriveFont(getBaseUnitOfMeasurement() * 4));
 		dragDropCTA.setForeground(getStateColor());
 		dragDropCTA.setText("Drag & drop " + (fileFilter == null ? "files" : fileFilter.getDescription()) + " here");
 	}
@@ -229,29 +225,73 @@ public class BHFileChooser extends JComponent implements AncestorListener, DropT
 	//</editor-fold>
 	
 	//<editor-fold defaultstate="collapsed" desc="ComponentListener">
+    private boolean changedToSmall = false;
 	@Override
 	public void componentResized(ComponentEvent e)
 	{
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        if (useButton)
+        {
+            float u = getBaseUnitOfMeasurement();
+//            boolean intersecting = dragDropCTA.getBounds().intersects(chooseButton.getBounds());
+            boolean smallCheckResult = checkIsSmallSize();
+            if (!changedToSmall && smallCheckResult) // if we haven't changed to small and we're the samll size
+            {
+                changedToSmall = true;
+                GridBagConstraints gbc;
+                {
+                    dragDropCTA.setFont(dragDropCTA.getFont().deriveFont(u * 2));
+                    gbc =
+                        new GridBagConstraints(
+                            1, 0, 1, 1, 1, 1,
+                            GridBagConstraints.CENTER,
+                            GridBagConstraints.NONE,
+                            new Insets(1, 1, 1, 1),
+                            1, 1);
+                    add(dragDropCTA, gbc);
+                }
+                {
+                    gbc.fill = GridBagConstraints.BOTH;
+                    gbc.gridx = 0;
+                    gbc.weightx = 0;
+                    add(chooseButton, gbc);
+                }
+            }
+            else if (changedToSmall && !smallCheckResult) // if we have changed to small and we're not the samll size
+            {
+                changedToSmall = false;
+                GridBagConstraints gbc;
+                {
+                    dragDropCTA.setFont(dragDropCTA.getFont().deriveFont(u * 4));
+                    gbc =
+                        new GridBagConstraints(
+                            0, 0, 1, 1, 1, 1,
+                            GridBagConstraints.CENTER,
+                            GridBagConstraints.NONE,
+                            new Insets(1, 1, 1, 1),
+                            1, 1);
+                    add(dragDropCTA, gbc);
+                }
+                {
+                    gbc.anchor = GridBagConstraints.NORTHWEST;
+                    gbc.fill = GridBagConstraints.NONE;
+                    gbc.weightx = gbc.weighty = 0;
+                    add(chooseButton, gbc);
+                }
+            }
+        }
 	}
+    
+    private boolean checkIsSmallSize()
+    {
+        return
+            getHeight()
+            <=
+            getBaseUnitOfMeasurement() * 10;// 10 = top border (1) + padding(3) + CTA size (2) + padding(3) + bottom border (1)
+    }
 	
-	@Override
-	public void componentMoved(ComponentEvent e)
-	{
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-	}
-	
-	@Override
-	public void componentShown(ComponentEvent e)
-	{
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-	}
-	
-	@Override
-	public void componentHidden(ComponentEvent e)
-	{
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-	}
+	@Override public void componentMoved(ComponentEvent e){}
+	@Override public void componentShown(ComponentEvent e){}
+	@Override public void componentHidden(ComponentEvent e){}
 	//</editor-fold>
 	//</editor-fold>
 	//</editor-fold>
@@ -395,6 +435,19 @@ public class BHFileChooser extends JComponent implements AncestorListener, DropT
 		}
 		return false;
 	}
+        
+    private float getBaseUnitOfMeasurement()
+    {
+		Font font = getFont();
+        return (float)
+            Math.max(
+                8, // font sizees are unlikely to go below 8, even on a TI-83
+                font == null
+                    ? Math.max(getHeight(), getWidth()) * 0.05
+                    : font.getSize2D() * 0.5
+            )
+        ;
+    }
 	//</editor-fold>
 
 
