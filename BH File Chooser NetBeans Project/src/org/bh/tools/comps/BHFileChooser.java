@@ -1,5 +1,6 @@
 package org.bh.tools.comps;
 
+import org.bh.tools.comps.evt.FileChoiceListener;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
@@ -28,11 +29,14 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.EventListener;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JWindow;
@@ -40,6 +44,7 @@ import javax.swing.border.StrokeBorder;
 import javax.swing.event.AncestorEvent;
 import javax.swing.event.AncestorListener;
 import javax.swing.filechooser.FileFilter;
+import org.bh.tools.comps.evt.FileChoiceEvent;
 
 /**
  * BHFileChooser, made for BH File Chooser NetBeans Project, is copyright Blue Husky Programming ©2014 CC 3.0 BY-SA<HR/>
@@ -73,13 +78,16 @@ public class BHFileChooser extends JComponent implements AncestorListener, DropT
 	private FileFilter fileFilter;
 	private List<File> files = new ArrayList<>();
 	private State state = State.WAITING;
-	private int acceptableAction = DnDConstants.ACTION_COPY_OR_MOVE, userAction;
+	private int acceptableAction = DnDConstants.ACTION_COPY_OR_MOVE/*, userAction*/;
+	private ArrayList<ActionListener> actionListeners = new ArrayList<>();
+	private JFileChooser fileChooser;
 	//</editor-fold>
 	
-	public BHFileChooser(boolean initUseButton, FileFilter initFileFilter)
+	public BHFileChooser(boolean initUseButton, FileFilter initFileFilter, JFileChooser initFileChooser)
 	{
 		useButton = initUseButton;
 		fileFilter = initFileFilter;
+		fileChooser = initFileChooser;
 		initGUI();
 	}
 
@@ -182,7 +190,7 @@ public class BHFileChooser extends JComponent implements AncestorListener, DropT
 	@Override
 	public void dropActionChanged(DropTargetDragEvent dtde)
 	{
-		userAction = dtde.getDropAction();
+//		userAction = dtde.getDropAction();                                                    REINSTATE IF THIS EVER WORKS AGAIN
 		validate();
 	}
 	
@@ -229,56 +237,55 @@ public class BHFileChooser extends JComponent implements AncestorListener, DropT
 	@Override
 	public void componentResized(ComponentEvent e)
 	{
-        if (useButton)
-        {
-            float u = getBaseUnitOfMeasurement();
-//            boolean intersecting = dragDropCTA.getBounds().intersects(chooseButton.getBounds());
-            boolean smallCheckResult = checkIsSmallSize();
-            if (!changedToSmall && smallCheckResult) // if we haven't changed to small and we're the samll size
-            {
-                changedToSmall = true;
-                GridBagConstraints gbc;
-                {
-                    dragDropCTA.setFont(dragDropCTA.getFont().deriveFont(u * 2));
-                    gbc =
-                        new GridBagConstraints(
-                            1, 0, 1, 1, 1, 1,
-                            GridBagConstraints.CENTER,
-                            GridBagConstraints.NONE,
-                            new Insets(1, 1, 1, 1),
-                            1, 1);
-                    add(dragDropCTA, gbc);
-                }
-                {
-                    gbc.fill = GridBagConstraints.BOTH;
-                    gbc.gridx = 0;
-                    gbc.weightx = 0;
-                    add(chooseButton, gbc);
-                }
-            }
-            else if (changedToSmall && !smallCheckResult) // if we have changed to small and we're not the samll size
-            {
-                changedToSmall = false;
-                GridBagConstraints gbc;
-                {
-                    dragDropCTA.setFont(dragDropCTA.getFont().deriveFont(u * 4));
-                    gbc =
-                        new GridBagConstraints(
-                            0, 0, 1, 1, 1, 1,
-                            GridBagConstraints.CENTER,
-                            GridBagConstraints.NONE,
-                            new Insets(1, 1, 1, 1),
-                            1, 1);
-                    add(dragDropCTA, gbc);
-                }
-                {
-                    gbc.anchor = GridBagConstraints.NORTHWEST;
-                    gbc.fill = GridBagConstraints.NONE;
-                    gbc.weightx = gbc.weighty = 0;
-                    add(chooseButton, gbc);
-                }
-            }
-        }
+		float u = getBaseUnitOfMeasurement();
+//        boolean intersecting = dragDropCTA.getBounds().intersects(chooseButton.getBounds());
+		boolean smallCheckResult = checkIsSmallSize();
+		if (!changedToSmall && smallCheckResult) // if we haven't changed to small and we're the samll size
+		{
+			changedToSmall = true;
+			GridBagConstraints gbc;
+			{
+				dragDropCTA.setFont(dragDropCTA.getFont().deriveFont(u * 2));
+				gbc =
+					new GridBagConstraints(
+						1, 0, 1, 1, 1, 1,
+						GridBagConstraints.CENTER,
+						GridBagConstraints.NONE,
+						new Insets(1, 1, 1, 1),
+						1, 1);
+				add(dragDropCTA, gbc);
+			}
+			if (useButton)
+			{
+				gbc.fill = GridBagConstraints.BOTH;
+				gbc.gridx = 0;
+				gbc.weightx = 0;
+				add(chooseButton, gbc);
+			}
+		}
+		else if (changedToSmall && !smallCheckResult) // if we have changed to small and we're not the samll size
+		{
+			changedToSmall = false;
+			GridBagConstraints gbc;
+			{
+				dragDropCTA.setFont(dragDropCTA.getFont().deriveFont(u * 4));
+				gbc =
+					new GridBagConstraints(
+						0, 0, 1, 1, 1, 1,
+						GridBagConstraints.CENTER,
+						GridBagConstraints.NONE,
+						new Insets(1, 1, 1, 1),
+						1, 1);
+				add(dragDropCTA, gbc);
+			}
+			if (useButton)
+			{
+				gbc.anchor = GridBagConstraints.NORTHWEST;
+				gbc.fill = GridBagConstraints.NONE;
+				gbc.weightx = gbc.weighty = 0;
+				add(chooseButton, gbc);
+			}
+		}
 	}
     
     private boolean checkIsSmallSize()
@@ -302,7 +309,13 @@ public class BHFileChooser extends JComponent implements AncestorListener, DropT
 		if (usesButton)
 		{
 			if (chooseButton == null)
-				chooseButton = new ChooseFileButton(oldFileChooser = new JFileChooser());
+			{
+				chooseButton = fileChooser == null ? new ChooseFileButton() : new ChooseFileButton(fileChooser);
+				chooseButton.addFileChoiceListener((FileChoiceEvent evt) ->
+				{
+					acceptFiles(evt.CHOSEN_FILES);
+				});
+			}
 			add(chooseButton,
 				new GridBagConstraints(
 						0, 0, 1, 1, 1d, 1d,
@@ -325,14 +338,22 @@ public class BHFileChooser extends JComponent implements AncestorListener, DropT
 	 *
 	 * @param fileList the list of files to accept
 	 */
-	public void acceptFiles(List<File> fileList)
+	public void acceptFiles(Collection<File> fileList)
 	{
 		setState(State.LOADING);
 		try
 		{
 			files.clear();
-			for (File file : fileList)
-				files.addAll(fileList);
+			files.addAll(fileList);
+			
+			ActionEvent evt = new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "file-chosen");
+			actionListeners.stream()                                  // stream all the objects
+				.filter((actionListener) -> (actionListener != null)) // only use non-nulls
+				.forEach((actionListener) -> {                        // for every object
+						actionListener.actionPerformed(evt);          // call its actionPerformed method
+					}
+				)
+			;
 			setState(State.LOADED);
 		}
 		catch (Exception e)
@@ -341,6 +362,13 @@ public class BHFileChooser extends JComponent implements AncestorListener, DropT
 			setState(State.EVALUATED_UNACCEPTABLE);
 			setState(State.WAITING);
 		}
+	}
+	public void acceptFiles(File[] files)
+	{
+		ArrayList<File> fileList = new ArrayList<>();
+		for (File file : files)
+			fileList.add(file);
+		acceptFiles(fileList);
 	}
 	public void acceptFile(File f)
 	{
@@ -367,6 +395,26 @@ public class BHFileChooser extends JComponent implements AncestorListener, DropT
 	public boolean isAccepting()
 	{
 		return isAccepting;
+	}
+	
+	/**
+	 * Adds an {@link ActionListener} that will fire when files are successfully selected.
+	 * 
+	 * @param newActionListener the new {@link ActionListener} to add
+	 * @return {@code true}, as per {@link Collection#add}
+	 */
+	public boolean addActionListener(ActionListener newActionListener)
+	{
+		return actionListeners.add(newActionListener);
+	}
+	public boolean removeActionListener(ActionListener oldActionListener)
+	{
+		return actionListeners.remove(oldActionListener);
+	}
+
+	public Collection<File> getFiles()
+	{
+		return files;
 	}
 	//</editor-fold>
 	
@@ -411,8 +459,8 @@ public class BHFileChooser extends JComponent implements AncestorListener, DropT
 			System.out.println(Arrays.deepToString(t.getTransferDataFlavors()));
 			
 			if (
-				   0 != (acceptableAction | userAction)
-				|| !t.isDataFlavorSupported(DataFlavor.javaFileListFlavor)
+//				0 != (acceptableAction | userAction) ||
+				!t.isDataFlavorSupported(DataFlavor.javaFileListFlavor)
 			)
 				return false;
 			
@@ -450,14 +498,14 @@ public class BHFileChooser extends JComponent implements AncestorListener, DropT
     }
 	//</editor-fold>
 
-
 	//<editor-fold defaultstate="collapsed" desc="inner classes">
 	public static class ChooseFileButton extends JButton
 	{
 		private static final String DEFAULT_TEXT = "Choose File...";
 		
-		JFileChooser jfc;
-		Window w;
+		private JFileChooser jfc;
+		private Window w;
+		private ArrayList<FileChoiceListener> fileChoiceListeners = new ArrayList<>();
 		
 		public ChooseFileButton()
 		{
@@ -467,6 +515,16 @@ public class BHFileChooser extends JComponent implements AncestorListener, DropT
 		public ChooseFileButton(String text)
 		{
 			this(text, new JFileChooser());
+			jfc.addActionListener((ActionEvent e) ->
+			{
+				FileChoiceEvent evt = new FileChoiceEvent(jfc.getSelectedFiles(), this);
+				fileChoiceListeners.stream()
+					.forEach((fcl) ->
+					{
+						fcl.fileChosen(evt);
+					}
+				);
+			});
 		}
 
 		public ChooseFileButton(JFileChooser fileChooserToShow)
@@ -490,10 +548,29 @@ public class BHFileChooser extends JComponent implements AncestorListener, DropT
 					if (c != null && c instanceof Window) // if it's already in a window, use that
 						w = (Window)c;
 					else
-						((JWindow)(w = new JWindow())).setContentPane(jfc);
+					{
+						((JDialog)(w = new JDialog((Window)null, String.valueOf(initText)))).setContentPane(jfc);
+						w.setLocationRelativeTo(ChooseFileButton.this);
+						((JDialog)w).pack();
+						
+						jfc.addActionListener((ActionEvent e1) ->
+						{
+							w.setVisible(false);
+						});
+					}
 				}
 				w.setVisible(true);
 			});
+		}
+
+		private void addFileChoiceListener(FileChoiceListener fileChoiceListener)
+		{
+			fileChoiceListeners.add(fileChoiceListener);
+		}
+		
+		private void removeFileChoiceListener(FileChoiceListener fileChoiceListener)
+		{
+			fileChoiceListeners.remove(fileChoiceListener);
 		}
 	}
 	

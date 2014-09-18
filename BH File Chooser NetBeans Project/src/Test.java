@@ -1,10 +1,15 @@
 
 import java.awt.BorderLayout;
+import java.awt.Desktop;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.Window;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFrame;
@@ -25,28 +30,10 @@ public class Test {
 
     static {
         String LAFClassName = UIManager.getSystemLookAndFeelClassName();
-        if (!UIManager.getLookAndFeel().getClass().getName()
-                .equals(LAFClassName)) {
+        if (!UIManager.getLookAndFeel().getClass().getName().equals(LAFClassName)) {
             LookAndFeel last = UIManager.getLookAndFeel();
             try {
                 UIManager.setLookAndFeel(LAFClassName);
-                Window[] windows = Window.getWindows();
-                boolean isFrame;
-                int state;
-                for (int i = 0;
-                        i < windows.length;
-                        i++) {
-                    java.awt.Rectangle r = new java.awt.Rectangle(windows[i].getBounds());//Changed to new rather than assignment {Feb 22, 2012 (1.1.1) for Marian}
-                    isFrame = windows[i] instanceof java.awt.Frame;
-                    state = isFrame ? ((java.awt.Frame) windows[i]).getState() : java.awt.Frame.NORMAL;
-                    javax.swing.SwingUtilities.updateComponentTreeUI(windows[i]);
-                    if (isFrame) {
-                        ((java.awt.Frame) (windows[i])).setState(state);
-                    }
-                    if (!isFrame || state != java.awt.Frame.MAXIMIZED_BOTH) {
-                        windows[i].setBounds(r);
-                    }
-                }
             } catch (UnsupportedLookAndFeelException ex) {
                 try {
                     UIManager.setLookAndFeel(last);
@@ -60,12 +47,30 @@ public class Test {
         }
     }
 
+	private static BHFileChooser bhfc;
     public static void main(String[] args) {
         JFrame frame = new JFrame("BH File Chooser test");
         frame.setLayout(new GridBagLayout());
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLocationByPlatform(true);
-        BHFileChooser bhfc = new BHFileChooser(true, null);
+        bhfc = new BHFileChooser(false, null, null);
+		bhfc.addActionListener((ActionEvent e) ->
+		{
+			System.out.println("Files selected!");
+			System.out.println(bhfc.getFiles());
+			for (File file : bhfc.getFiles())
+			{
+				System.out.println("  \tOpening " + file + "...");
+				try
+				{
+					Desktop.getDesktop().open(file);
+				}
+				catch (IOException ex)
+				{
+					Logger.getLogger(Test.class.getName()).log(Level.SEVERE, "Could not open file", ex);
+				}
+			}
+		});
         frame.add(bhfc, new GridBagConstraints(0, 0, 1, 1, 1, 1, GridBagConstraints.CENTER,
                 GridBagConstraints.BOTH, new Insets(16, 16, 16, 16), 16, 16));
         frame.pack();
