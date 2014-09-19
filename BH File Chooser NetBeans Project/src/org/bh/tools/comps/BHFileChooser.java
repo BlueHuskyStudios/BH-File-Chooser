@@ -147,8 +147,8 @@ public class BHFileChooser extends JComponent implements AncestorListener, DropT
 	private void validateCTA()
 	{
 		Font font = dragDropCTA.getFont();
-		if (font != null)
-			dragDropCTA.setFont(font.deriveFont(getBaseUnitOfMeasurement() * 4));
+		/*if (font != null)
+			dragDropCTA.setFont(font.deriveFont(getBaseUnitOfMeasurement() * 4));*/
 		dragDropCTA.setForeground(getStateColor());
 		dragDropCTA.setText("Drag & drop " + (fileFilter == null ? "files" : fileFilter.getDescription()) + " here");
 	}
