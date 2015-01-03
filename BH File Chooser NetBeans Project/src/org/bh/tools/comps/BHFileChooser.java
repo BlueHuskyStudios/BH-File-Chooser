@@ -330,6 +330,10 @@ public class BHFileChooser extends JComponent implements AncestorListener, DropT
 		{
 			remove(chooseButton);
 		}
+		
+		invalidate();
+		revalidate();
+		repaint();
 	}
 	
 	/**

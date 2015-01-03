@@ -1,19 +1,16 @@
 
-import java.awt.Desktop;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.AbstractAction;
-import javax.swing.Action;
 import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JMenuBar;
@@ -53,20 +50,22 @@ public class Test {
     }
 
 	private static BHFileChooser bhfc;
+	private static JCheckBox jcb;
     public static void main(String[] args) {
         JFrame frame = new JFrame("BH File Chooser test");
         frame.setLayout(new GridBagLayout());
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLocationByPlatform(true);
 		JMenuBar jmb = new JMenuBar();
-		jmb.add(new JCheckBox(new AbstractAction("Use old file choice method")
+		jcb = new JCheckBox(new AbstractAction("Use old file choice method")
 		{
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				bhfc.setUsesButton(jmb.isSelected());
+				bhfc.setUsesButton(jcb.isSelected());
 			}
-		}));
+		});
+		jmb.add(jcb);
 		frame.setJMenuBar(jmb);
         bhfc = new BHFileChooser(false, null, null);
 		bhfc.addActionListener((ActionEvent e) ->
@@ -87,10 +86,10 @@ public class Test {
 						frame, // parent
 						first64Bytes, // message
 						"First 64 bytes of " + file.getName(), // title
-						JOptionPane.NO_OPTION, // option type
+						JOptionPane.OK_OPTION, // option type
 						JOptionPane.PLAIN_MESSAGE, // message type
 						null, // icon
-						new Object[]{""}, // options
+						new Object[]{"Mkay"}, // options
 						null // default option
 					);
 				}
@@ -103,6 +102,8 @@ public class Test {
         frame.add(bhfc, new GridBagConstraints(0, 0, 1, 1, 1, 1, GridBagConstraints.CENTER,
                 GridBagConstraints.BOTH, new Insets(16, 16, 16, 16), 16, 16));
         frame.pack();
+		Dimension d = frame.getSize();
+		frame.setSize(d.width + 128, d.height + 128);
         frame.setVisible(true);
         bhfc.validate();
 		Timer t = new Timer("Prettification");
